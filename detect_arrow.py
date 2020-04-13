@@ -1,4 +1,5 @@
 import cv2
+import imutils
 import numpy as np
 raw_data = ''
 with open('compare.csv','r') as f:
@@ -20,30 +21,29 @@ for line in lines:
         cropped_img = img[max(0,y_min-range_extend_y):min(480,y_max+range_extend_y), max(x_min-range_extend_x,0):min(x_max+range_extend_x, 640)]
         image_obj = cropped_img
         gray = cv2.cvtColor(image_obj, cv2.COLOR_BGR2GRAY)
-
-        kernel = np.ones((4, 4), np.uint8)
-        dilation = cv2.dilate(gray, kernel, iterations=1)
-
-        blur = cv2.GaussianBlur(dilation, (5, 5), 0)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        thresh = cv2.threshold(blurred, 60, 255, cv2.THRESH_BINARY)[1]
+        thresh =np.bitwise_not(thresh)
 
 
-        thresh = cv2.adaptiveThreshold(blur, 255, 1, 1, 11, 2)
-
-        # Now finding Contours         ###################
-        contours = cv2.findContours(
-            thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+	cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
         coordinates = []
-        for cnt in contours:
-            
-            [point_x, point_y, width, height] = cv2.boundingRect(cnt)
-            approx = cv2.approxPolyDP(       cnt, 0.07 * cv2.arcLength(cnt, True), True)
-            print('asfasfasfasf')
+        cv2.imshow('as,i',thresh)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        for cnt in cnts:
+            peri = cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, 0.07 * cv2.arcLength(cnt, True), True)
             if len(approx) == 3:
+                print('abc')
+                cv2.drawContours(cropped_img, [cnt], -1, (0, 255, 0), 2)
                 coordinates.append([cnt])
-                cv2.drawContours(image_obj, [cnt], 0, (0, 0, 255), 3)
+               
             
          
-        cv2.imshow('as,i',thresh)
+        cv2.imshow('as,i',cropped_img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
